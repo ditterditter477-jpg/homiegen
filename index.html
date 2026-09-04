@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HomieGen · Stronghold</title>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    #particles.ring span{width:12px;height:12px;background:transparent;border:1px solid #9da6ff;border-radius:50%;box-shadow:0 0 12px #6874ff}
+    #particles.star span{width:13px;height:13px;background:#b5bcff;clip-path:polygon(50% 0,61% 35%,98% 38%,68% 59%,79% 96%,50% 74%,21% 96%,32% 59%,2% 38%,39% 35%)}
+    #particles.line span{width:20px;height:2px;border-radius:2px}
+    #particles.float span{animation-name:particle-float}
+    #particles.spin span{animation-name:particle-spin}
+    #particles.pulse span{animation-name:particle-pulse}
+    #particles.still span{animation:none}
+    @keyframes particle-float{0%{transform:translate3d(0,0,0);opacity:.2}50%{transform:translate3d(25px,-90px,0);opacity:1}100%{transform:translate3d(-12px,-160px,0);opacity:.15}}
+    @keyframes particle-spin{0%{transform:rotate(0) translateY(0);opacity:.25}100%{transform:rotate(360deg) translateY(-145px);opacity:.2}}
+    @keyframes particle-pulse{0%,100%{transform:scale(.35);opacity:.15}50%{transform:scale(1.8);opacity:1}}
+    .view{animation:view-in .34s cubic-bezier(.2,.8,.2,1)}
+    @keyframes view-in{from{opacity:0;transform:translateY(18px) scale(.987)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .nav button{transition:color .18s,background .18s,transform .18s}.nav button:hover{transform:translateX(4px)}
+    .music-controls{display:flex;align-items:center;gap:3px;padding:3px;border:1px solid var(--line);border-radius:10px;background:#151520}.music-controls button{width:29px;height:29px;border:0;border-radius:7px;background:transparent;color:#b8bcdf}.music-controls button:hover{background:#5865f238;color:#fff}.music-controls input{width:62px;accent-color:#5865f2}.user-lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.72fr);gap:20px;align-items:stretch}.restock-feed{height:calc(100% - 0px)}.delivery{display:grid;gap:5px;padding:12px 0;border-bottom:1px solid #55557075}.delivery:last-child{border:0}.delivery code{padding:8px;border-radius:7px;background:#12121d;color:#bdc4ff;word-break:break-all}.delivery small{color:var(--muted)}
+    .service-image{display:block;width:100%;height:118px;object-fit:cover;border-radius:10px;margin:0 0 14px;border:1px solid #65658a}.service-thumb{width:38px;height:38px;object-fit:cover;border-radius:8px;margin-right:10px;border:1px solid #65658a}.service-row{justify-content:flex-start}.service-row .icon-btn{margin-left:auto}
+    @media(max-width:1024px){.user-lower{grid-template-columns:1fr}.restock-feed{height:auto}}@media(max-width:767px){.music-controls{order:3;width:100%;justify-content:center}.identity{flex-wrap:wrap;justify-content:flex-end}.music-controls input{width:76px}.nav button:hover{transform:none}}
+  </style>
+</head>
+<body>
+  <div id="particles" aria-hidden="true"></div>
+  <audio id="ambient-audio" loop preload="none"></audio>
+  <div id="app"></div>
+  <div id="toasts" aria-live="polite"></div>
+  <script src="style.js"></script>
+</body>
+</html>
