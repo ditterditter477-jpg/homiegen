@@ -1,5 +1,5 @@
 // ============================================================
-// HOMIEGEN – SUPABASE EDITION
+// HOMIEGEN – MONGODB EDITION
 // ============================================================
 
 const SESSION = 'homiegen_session_v2';
@@ -100,7 +100,7 @@ async function getNextId(table) {
 }
 
 // ============================================================
-// DB OPERATIONS
+// DB OPERATIONS - DAS IST DER WICHTIGE TEIL!
 // ============================================================
 async function load() {
   try {
@@ -246,7 +246,7 @@ function sound(kind = 'menu') {
 }
 
 // ============================================================
-// LOGIN
+// LOGIN (Fortsetzung)
 // ============================================================
 function login() {
   const admin = loginRole === 'admin';
@@ -515,7 +515,7 @@ function stats(d) {
 }
 
 // ============================================================
-// ACCOUNTS
+// ACCOUNTS (gekürzt - gleiche wie vorher)
 // ============================================================
 let accountPage = 1;
 let accountSearchTerm = '';
@@ -704,7 +704,7 @@ function users(d) {
 }
 
 // ============================================================
-// LICENSES (Admin) - MIT ZUWEISUNGSFUNKTION
+// LICENSES
 // ============================================================
 function licenses(d) {
   const isEn = prefs().language === 'en';
@@ -742,11 +742,12 @@ function licenses(d) {
 }
 
 // ============================================================
-// LICENSE MANAGEMENT - ADMIN ZUWEISUNG
+// LICENSE FUNCTIONS
 // ============================================================
-window.showAssignLicenseModal = () => {
-  const d = load();
+window.showAssignLicenseModal = async () => {
+  const d = await load();
   const isEn = prefs().language === 'en';
+  const currentUser = await current();
   
   const availableLicenses = d.licenses.filter(l => {
     const user = d.users.find(u => u.license_key === l.key);
@@ -783,7 +784,7 @@ window.showAssignLicenseModal = () => {
   `;
   document.body.appendChild(modal);
   
-  modal.querySelector('#assign-license-form').onsubmit = (e) => {
+  modal.querySelector('#assign-license-form').onsubmit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
     const licenseKey = f.get('license_key');
@@ -800,8 +801,8 @@ window.showAssignLicenseModal = () => {
       user.license_type = license.type;
       user.daily_limit = license.daily_limit;
       user.used_today = 0;
-      save(d);
-      log(d, `License ${licenseKey} assigned to ${user.username}`, current().username);
+      await save(d);
+      await logAction(d, `License ${licenseKey} assigned to ${user.username}`, currentUser.username);
       toast(`✅ ${isEn ? 'License assigned!' : 'Lizenz zugewiesen!'}`);
       render();
       modal.remove();
@@ -809,9 +810,10 @@ window.showAssignLicenseModal = () => {
   };
 };
 
-window.revokeLicenseFromUser = (userId) => {
-  const d = load();
+window.revokeLicenseFromUser = async (userId) => {
+  const d = await load();
   const isEn = prefs().language === 'en';
+  const currentUser = await current();
   const user = d.users.find(u => u.id === userId);
   if (user && user.license_key) {
     if (!confirm(isEn ? `Revoke license from ${user.username}?` : `Lizenz von ${user.username} entziehen?`)) return;
@@ -820,16 +822,17 @@ window.revokeLicenseFromUser = (userId) => {
     user.license_type = null;
     user.daily_limit = 0;
     user.used_today = 0;
-    save(d);
-    log(d, `License ${licenseKey} revoked from ${user.username}`, current().username);
+    await save(d);
+    await logAction(d, `License ${licenseKey} revoked from ${user.username}`, currentUser.username);
     toast(`✅ ${isEn ? 'License revoked!' : 'Lizenz entzogen!'}`);
     render();
   }
 };
 
-window.assignLicense = (userId) => {
-  const d = load();
+window.assignLicense = async (userId) => {
+  const d = await load();
   const isEn = prefs().language === 'en';
+  const currentUser = await current();
   const user = d.users.find(u => u.id === userId);
   if (!user) return;
   
@@ -863,7 +866,7 @@ window.assignLicense = (userId) => {
   `;
   document.body.appendChild(modal);
   
-  modal.querySelector('#quick-assign-form').onsubmit = (e) => {
+  modal.querySelector('#quick-assign-form').onsubmit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
     const licenseKey = f.get('license_key');
@@ -874,8 +877,8 @@ window.assignLicense = (userId) => {
       user.license_type = license.type;
       user.daily_limit = license.daily_limit;
       user.used_today = 0;
-      save(d);
-      log(d, `License ${licenseKey} assigned to ${user.username}`, current().username);
+      await save(d);
+      await logAction(d, `License ${licenseKey} assigned to ${user.username}`, currentUser.username);
       toast(`✅ ${isEn ? 'License assigned!' : 'Lizenz zugewiesen!'}`);
       render();
       modal.remove();
@@ -883,9 +886,10 @@ window.assignLicense = (userId) => {
   };
 };
 
-window.revokeLicense = (userId) => {
-  const d = load();
+window.revokeLicense = async (userId) => {
+  const d = await load();
   const isEn = prefs().language === 'en';
+  const currentUser = await current();
   const user = d.users.find(u => u.id === userId);
   if (user && user.license_key) {
     if (!confirm(isEn ? `Revoke license from ${user.username}?` : `Lizenz von ${user.username} entziehen?`)) return;
@@ -894,8 +898,8 @@ window.revokeLicense = (userId) => {
     user.license_type = null;
     user.daily_limit = 0;
     user.used_today = 0;
-    save(d);
-    log(d, `License ${licenseKey} revoked from ${user.username}`, current().username);
+    await save(d);
+    await logAction(d, `License ${licenseKey} revoked from ${user.username}`, currentUser.username);
     toast(`✅ ${isEn ? 'License revoked!' : 'Lizenz entzogen!'}`);
     render();
   } else {
@@ -1214,38 +1218,38 @@ function bindAdmin(d, u) {
     render();
   };
   
-  window.restockService = (id) => {
+  window.restockService = async (id) => {
     sound('restock');
     const service = d.services.find(s => s.id === id);
     if (!service) return toast(isEn ? 'Service not found.' : 'Service nicht gefunden.');
     const newAccount = {
-      id: id(d.accounts),
+      id: await getNextId('accounts'),
       service_id: id,
       credential: `${service.name}-${Date.now().toString(36).toUpperCase()}`,
       status: 'available',
       created: Date.now()
     };
     d.accounts.push(newAccount);
-    log(d, `${service.name} restocked (1 Account)`, u.username);
+    await logAction(d, `${service.name} restocked (1 Account)`, u.username);
     d.changelog.push({ 
-      id: id(d.changelog),
+      id: await getNextId('changelog'),
       message: `+ ${service.name} restocked by ${u.username}`,
       user: u.username,
       timestamp: new Date().toLocaleString('de-DE')
     });
-    save(d);
+    await save(d);
     render();
     toast(`✅ ${service.name} ${isEn ? 'restocked!' : 'aufgefüllt!'}`);
   };
 
-  window.deleteService = (id) => {
+  window.deleteService = async (id) => {
     if (!confirm(isEn ? 'Delete this service and all its accounts?' : 'Diesen Service und alle Accounts löschen?')) return;
     const service = d.services.find(s => s.id === id);
     if (!service) return;
     d.services = d.services.filter(s => s.id !== id);
     d.accounts = d.accounts.filter(a => a.service_id !== id);
-    log(d, `Service ${service.name} deleted`, u.username);
-    save(d);
+    await logAction(d, `Service ${service.name} deleted`, u.username);
+    await save(d);
     render();
     sound('menu');
     toast(`🗑️ ${isEn ? 'Service deleted' : 'Service gelöscht'}`);
@@ -1269,7 +1273,7 @@ function bindAdmin(d, u) {
       </div>
     `;
     document.body.appendChild(modal);
-    modal.querySelector('#add-service-form').onsubmit = (e) => {
+    modal.querySelector('#add-service-form').onsubmit = async (e) => {
       e.preventDefault();
       const f = new FormData(e.target);
       const name = f.get('name');
@@ -1278,14 +1282,14 @@ function bindAdmin(d, u) {
         return;
       }
       d.services.push({
-        id: id(d.services),
+        id: await getNextId('services'),
         name: name,
         stock: 0,
         cooldown: parseInt(f.get('cooldown')) || 0,
         image: ''
       });
-      log(d, `Service ${name} added`, u.username);
-      save(d);
+      await logAction(d, `Service ${name} added`, u.username);
+      await save(d);
       render();
       modal.remove();
       sound('ok');
@@ -1316,25 +1320,25 @@ function bindAdmin(d, u) {
       </div>
     `;
     document.body.appendChild(modal);
-    modal.querySelector('#add-account-form').onsubmit = (e) => {
+    modal.querySelector('#add-account-form').onsubmit = async (e) => {
       e.preventDefault();
       const f = new FormData(e.target);
       const serviceId = parseInt(f.get('service_id'));
       const credentials = f.get('credentials').split('\n').filter(line => line.trim());
       let added = 0;
-      credentials.forEach(cred => {
+      for (const cred of credentials) {
         d.accounts.push({
-          id: id(d.accounts),
+          id: await getNextId('accounts'),
           service_id: serviceId,
           credential: cred.trim(),
           status: 'available',
           created: Date.now()
         });
         added++;
-      });
+      }
       const service = d.services.find(s => s.id === serviceId);
-      log(d, `${added} accounts added to ${service ? service.name : 'Service'}`, u.username);
-      save(d);
+      await logAction(d, `${added} accounts added to ${service ? service.name : 'Service'}`, u.username);
+      await save(d);
       render();
       modal.remove();
       sound('ok');
@@ -1342,61 +1346,61 @@ function bindAdmin(d, u) {
     };
   };
 
-  window.deleteAccount = (id) => {
+  window.deleteAccount = async (id) => {
     const idx = d.accounts.findIndex(a => a.id === id);
     if (idx > -1) {
       const acc = d.accounts[idx];
       d.accounts.splice(idx, 1);
-      log(d, `Account ${acc.credential} deleted`, u.username);
-      save(d);
+      await logAction(d, `Account ${acc.credential} deleted`, u.username);
+      await save(d);
       render();
       sound('menu');
       toast('🗑️ ' + (isEn ? 'Account deleted' : 'Account gelöscht'));
     }
   };
 
-  window.blacklistAccount = (id) => {
+  window.blacklistAccount = async (id) => {
     const acc = d.accounts.find(a => a.id === id);
     if (acc) {
       acc.status = 'blacklisted';
-      log(d, `Account ${acc.credential} blacklisted`, u.username);
-      save(d);
+      await logAction(d, `Account ${acc.credential} blacklisted`, u.username);
+      await save(d);
       render();
       sound('menu');
       toast('⛔ ' + (isEn ? 'Account blacklisted!' : 'Account geblacklistet!'));
     }
   };
   
-  window.unblacklistAccount = (id) => {
+  window.unblacklistAccount = async (id) => {
     const acc = d.accounts.find(a => a.id === id);
     if (acc) {
       acc.status = 'available';
-      log(d, `Account ${acc.credential} unblacklisted`, u.username);
-      save(d);
+      await logAction(d, `Account ${acc.credential} unblacklisted`, u.username);
+      await save(d);
       render();
       sound('menu');
       toast('✅ ' + (isEn ? 'Account unblacklisted!' : 'Account entblacklistet!'));
     }
   };
 
-  window.blacklistUser = (id) => {
+  window.blacklistUser = async (id) => {
     const user = d.users.find(u => u.id === id);
     if (user) {
       user.blacklisted = true;
-      log(d, `User ${user.username} blacklisted`, u.username);
-      save(d);
+      await logAction(d, `User ${user.username} blacklisted`, u.username);
+      await save(d);
       render();
       sound('menu');
       toast('⛔ ' + (isEn ? 'User blacklisted!' : 'User geblacklistet!'));
     }
   };
   
-  window.unblacklistUser = (id) => {
+  window.unblacklistUser = async (id) => {
     const user = d.users.find(u => u.id === id);
     if (user) {
       user.blacklisted = false;
-      log(d, `User ${user.username} unblacklisted`, u.username);
-      save(d);
+      await logAction(d, `User ${user.username} unblacklisted`, u.username);
+      await save(d);
       render();
       sound('menu');
       toast('✅ ' + (isEn ? 'User unblacklisted!' : 'User entblacklistet!'));
@@ -1423,17 +1427,17 @@ function bindAdmin(d, u) {
       </div>
     `;
     document.body.appendChild(modal);
-    modal.querySelector('#add-changelog-form').onsubmit = (e) => {
+    modal.querySelector('#add-changelog-form').onsubmit = async (e) => {
       e.preventDefault();
       const f = new FormData(e.target);
       d.changelog.push({
-        id: id(d.changelog),
+        id: await getNextId('changelog'),
         message: f.get('message'),
         user: u.username,
         timestamp: new Date().toLocaleString('de-DE')
       });
-      log(d, `Changelog entry added`, u.username);
-      save(d);
+      await logAction(d, `Changelog entry added`, u.username);
+      await save(d);
       render();
       modal.remove();
       sound('ok');
@@ -1471,7 +1475,7 @@ function bindAdmin(d, u) {
     `;
     document.body.appendChild(modal);
     
-    modal.querySelector('#add-license-form').onsubmit = (e) => {
+    modal.querySelector('#add-license-form').onsubmit = async (e) => {
       e.preventDefault();
       const f = new FormData(e.target);
       const key = f.get('key');
@@ -1484,7 +1488,7 @@ function bindAdmin(d, u) {
       }
       
       d.licenses.push({
-        id: id(d.licenses),
+        id: await getNextId('licenses'),
         key: key,
         type: type,
         daily_limit: dailyLimit,
@@ -1494,8 +1498,8 @@ function bindAdmin(d, u) {
         max_uses: 1,
         current_uses: 0
       });
-      save(d);
-      log(d, `License ${key} created (${type})`, u.username);
+      await save(d);
+      await logAction(d, `License ${key} created (${type})`, u.username);
       render();
       modal.remove();
       sound('ok');
@@ -1503,13 +1507,13 @@ function bindAdmin(d, u) {
     };
   };
 
-  window.deleteLicense = (id) => {
+  window.deleteLicense = async (id) => {
     const idx = d.licenses.findIndex(l => l.id === id);
     if (idx > -1) {
       const lic = d.licenses[idx];
       d.licenses.splice(idx, 1);
-      log(d, `License ${lic.key} deleted`, u.username);
-      save(d);
+      await logAction(d, `License ${lic.key} deleted`, u.username);
+      await save(d);
       render();
       sound('menu');
       toast('🗑️ ' + (isEn ? 'License deleted' : 'Lizenz gelöscht'));
@@ -1542,7 +1546,7 @@ function bindAdmin(d, u) {
     `;
     document.body.appendChild(modal);
     
-    modal.querySelector('#add-user-form').onsubmit = (e) => {
+    modal.querySelector('#add-user-form').onsubmit = async (e) => {
       e.preventDefault();
       const f = new FormData(e.target);
       const username = f.get('username').trim();
@@ -1557,7 +1561,7 @@ function bindAdmin(d, u) {
       
       const hashedPassword = hash(password);
       const newUser = {
-        id: id(d.users),
+        id: await getNextId('users'),
         username: username,
         email: email,
         password: hashedPassword,
@@ -1573,8 +1577,8 @@ function bindAdmin(d, u) {
         used_today: 0
       };
       d.users.push(newUser);
-      save(d);
-      log(d, `User ${username} added (${role})`, u.username);
+      await save(d);
+      await logAction(d, `User ${username} added (${role})`, u.username);
       render();
       modal.remove();
       sound('ok');
@@ -1582,14 +1586,14 @@ function bindAdmin(d, u) {
     };
   };
 
-  window.deleteUser = (id) => {
+  window.deleteUser = async (id) => {
     const idx = d.users.findIndex(u => u.id === id);
     if (idx > -1) {
       const user = d.users[idx];
       if (user.username === 'nova' || user.username === 'gurke') return toast('❌ ' + (isEn ? 'Cannot delete admin.' : 'Admin kann nicht gelöscht werden.'));
       d.users.splice(idx, 1);
-      log(d, `User ${user.username} deleted`, u.username);
-      save(d);
+      await logAction(d, `User ${user.username} deleted`, u.username);
+      await save(d);
       render();
       sound('menu');
       toast('🗑️ ' + (isEn ? 'User deleted' : 'Benutzer gelöscht'));
@@ -1600,7 +1604,7 @@ function bindAdmin(d, u) {
 function bindUser(d, u) {
   const isEn = prefs().language === 'en';
   
-  window.claimAccount = (serviceId) => {
+  window.claimAccount = async (serviceId) => {
     if (!u.license_key) {
       return toast(isEn ? '❌ No license found! Please contact an admin.' : '❌ Keine Lizenz gefunden! Bitte kontaktiere einen Admin.');
     }
@@ -1632,13 +1636,13 @@ function bindUser(d, u) {
 
     if (user) {
       user.used_today = (user.used_today || 0) + 1;
-      save(d);
+      await save(d);
     }
 
     const expiresAt = Date.now() + 43200000;
 
     d.deliveries.push({
-      id: id(d.deliveries),
+      id: await getNextId('deliveries'),
       user_id: u.id,
       service_id: serviceId,
       service_name: service?.name || 'Service',
@@ -1646,8 +1650,8 @@ function bindUser(d, u) {
       expires: expiresAt
     });
 
-    log(d, `${u.username} claimed ${service?.name || 'account'}`, u.username);
-    save(d);
+    await logAction(d, `${u.username} claimed ${service?.name || 'account'}`, u.username);
+    await save(d);
     render();
     sound('ok');
     showClaimModal(account.credential, service?.name || 'Service');
